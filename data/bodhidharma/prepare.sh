@@ -26,7 +26,7 @@ fi
 
 # Fix the key signatures and filenames
 dir=01_fixed
-mkdir "$dir" && {
+mkdir -p "$dir" && {
   log "Found $(find -L "$src_dir" -type f | wc -l) files in $src_dir"
   find -L "$src_dir" | grep -Ei '\.mid$' | while read -r f; do
     fname="$(basename "$f" | sed -r 's/\.mid/.mid/i')"
@@ -38,19 +38,22 @@ mkdir "$dir" && {
 }
 
 # Filter the files to have 4/4 time only
+# Copiar todos los archivos sin filtrar (no se aplica filtro de compás)
+# Copiar todos los archivos sin filtrar (no se aplica filtro de compás)
 dir=02_filtered
-mkdir "$dir" && {
-  python -m groove2groove.scripts.filter_4beats 01_fixed/*.mid | while read -r f; do
-    log_progress "$(basename "$f")"
-    ln "$f" "$dir/$(basename "$f")" || die
+mkdir -p "$dir" && {
+  find 01_fixed -name '*.mid' | while read -r f; do
+    cp "$f" "$dir/$(basename "$f")"
   done || die
   log
-  log "Linked $(find "$dir" -name '*.mid' | wc -l) files to $dir"
+  log "Copiados $(find "$dir" -name '*.mid' | wc -l) archivos a $dir (sin filtrar)"
 }
+
+
 
 # Chop the files into 8-bar segments, save as NoteSequences
 dir=03_chopped
-mkdir "$dir" && {
+mkdir -p "$dir" && {
   python -m groove2groove.scripts.chop_midi \
       --bars-per-segment 8 \
       --min-notes-per-segment 1 \
@@ -61,7 +64,7 @@ mkdir "$dir" && {
 
 # Separate the instrument tracks
 dir=04_separated
-mkdir "$dir" && {
+mkdir -p "$dir" && {
   instr=all_except_drums
     python -m groove2groove.scripts.filter_note_sequences \
     --no-drums \
@@ -72,7 +75,7 @@ mkdir "$dir" && {
 
 # Make an LMDB database
 dir=05_db
-mkdir "$dir" && {
+mkdir -p "$dir" && {
   for recordfile in 04_separated/*.tfrecord; do
     prefix=$(basename "${recordfile%.tfrecord}")
     python -m groove2groove.scripts.tfrecord_to_lmdb "$recordfile" "$tmp_dir/$prefix.db" || die
@@ -82,7 +85,7 @@ mkdir "$dir" && {
 }
 
 dir=final
-mkdir "$dir" && {
+mkdir -p "$dir" && {
   ln -t "$dir" 04_separated/* 05_db/*
 
   # Turn the metadata into a dict, add more information.

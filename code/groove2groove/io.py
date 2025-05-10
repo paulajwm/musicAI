@@ -300,7 +300,8 @@ class MidiPipeline(Loader):
 
     def save(self, sequences, path):
         sequence = self._seq_pipeline.postprocess(sequences)
-        midi_io.note_sequence_to_midi_file(sequence, path)
+        with open(path, 'wb') as f:
+            f.write(midi_io.note_sequence_to_pretty_midi(sequence).write())
 
 
 def _build_segment_index(metadata):
